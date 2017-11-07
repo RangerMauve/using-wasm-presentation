@@ -50,7 +50,7 @@ async function main(){
 
 	console.log(`4! = ${factorial(4)}`);
 
-	var memory_management = (await createModule(`
+	var simple_memory = (await createModule(`
 		(module
 			(memory $0 1)
 			(func $save (param $where i32) (param $what i32) (result i32)
@@ -65,8 +65,8 @@ async function main(){
 		)
 	`)).exports;
 
-	console.log(`Saving 4, to 0: ${memory_management.save(0, 4)}`);
-	console.log(`Loading from 0: ${memory_management.load(0)}`);
+	console.log(`Saving 4, to 0: ${simple_memory.save(0, 4)}`);
+	console.log(`Loading from 0: ${simple_memory.load(0)}`);
 }
 
 async function createModule(source, imports) {
@@ -81,4 +81,28 @@ async function createModule(source, imports) {
 	var instance = await WebAssembly.Instance(module, imports||{});
 
 	return instance;
+}
+
+function miltiplyMatrices(a, b, aRows, bColumns, aColumn_bRows) {
+	// Initialize result array
+	var result = new Array(aRows * bColumns);
+	// For each row in A
+	for(var aRow = 0; aRow < aRows; aRow++)
+		// For each column in B
+		for(var bColumn = 0; bColumn < bColumns; bColumn++) {
+			// Create initial counter
+			var sum = 0;
+			// Go through each column/row pair in A/B
+			for(var shared = 0; shared < aColumn_bRows; shared++) {
+				// Add the product of the two points to the sum
+				sum += 
+					// Get the a[row, current column]
+					a[(aRow * aColumn_bRows) + shared] *
+					// Get the b[current row, column]
+					b[bColumn + (shared * bColumns)];
+			}
+			// Set the result in the array at [row, column] to the sum
+			result[(aRow * bColumns) + bColumn] = sum;
+		}
+	return result;
 }
