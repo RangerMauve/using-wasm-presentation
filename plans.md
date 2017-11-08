@@ -59,11 +59,6 @@
 	- People wanted something better
 	- Mozilla, Google, Microsoft worked together to create a new standard
 	- Focused on minimal viable product with a well defined bytecode
-- Examples
-	- Top level module declaration
-		```wast
-
-		```
 - JavaScript API
 	- WASM is used to define modules
 	- Uses compiled WASM bytecode
@@ -91,12 +86,43 @@
 			}).buffer;
 
 			var module = await WebAssembly.compile(binary);
-			var instance = await WebAssembly.Instance(module, imports);
+			var instance = await WebAssembly.Instance(module, imports || {});
 
 			return instance;
 		}
 		```
+- Examples
+	- Function declaration
+		```wast
+		(func $identity (param i32) (result i32) ...etc)
+		```
+	- Local variables
+		```
+		(func (param $bar i32)
+			(local $foo i32)
+			(set_local $foo
+				(get_local $bar)
+			)
+		)
+		```
+	- Module with exported function
+		```wast
+		(module
+			(func $add (param $lhs i32) (param $rhs i32) (result i32)
+				(i32.add
+					(get_local $lhs)
+					(get_local $rhs)
+				)
+			)
+			(export "add" (func $add))
+		)
+		```
+		```javascript
+		var mymodule = await createModule(sourcecodehere);
 
+		// Returns 420
+		mymodule.exports.add(400, 20);
+		```
 
 - References
 	- Support http://caniuse.com/#feat=wasm

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<title>Title</title>
+<meta charset="utf-8">
+<style>
+	@import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+	@import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+	@import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+	html {
+		background: url(http://ranger.mauve.moe/RangerMauve.svg);
+		background-repeat: no-repeat;
+		background-position: center center;
+		height: 100%;
+		width: 100%;
+	}
+
+	body {
+		font-family: 'Droid Serif';
+	}
+	h1, h2, h3 {
+		font-family: 'Yanone Kaffeesatz';
+		font-weight: normal;
+	}
+	.remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+
+		/* Two-column layout */
+	.left-column {
+		color: #777;
+		width: 20%;
+		height: 92%;
+		float: left;
+	}
+	.left-column h2:last-of-type, .left-column h3:last-child {
+		color: #000;
+	}
+	.right-column {
+		width: 75%;
+		float: right;
+		padding-top: 1em;
+	}
+	.eyelogo img {
+		width: 8em;
+		height: 8em;
+	}
+	#source {
+		display: none;
+	}
+	.dark-slide {
+		background: rgb(39, 40, 34);
+		color: rgb(248, 248,248);
+	}
+	.wasm-slide {
+		background: rgb(101, 79, 240);
+		color: rgb(248, 248, 248);
+	}
+	.gif-slide h2 {
+		padding: 0.5em;
+		background: rgba(255,255,255,0.8);
+		color: black;
+	}
+	.half-images img {
+		width: 49%;
+	}
+	.big {
+		font-size: 2em;
+	}
+	.big li {
+		margin: 0.5em;
+	}
+</style>
+<textarea id="source">
+background-image: url(https://upload.wikimedia.org/wikipedia/commons/3/30/WebAssembly_Logo.png)
+class: center, middle
+
+# Understanding Web Assembly
+
+---
+
+class: center
+
+# Whoami
+
+Georgiy Shibaev
+
+[@rangermauve](https://github.com/RangerMauve)
+
+Technical Lead at [Aetonix](http://aetonix.com/)
+
+.eyelogo[![RangerMauve logo](http://ranger.mauve.moe/RangerMauve.svg)]
+
+---
+
+class: wasm-slide
+
+### Assembly format for the Web
+
+```WebAssembly
+(module
+	(func $add (param $lhs i32) (param $rhs i32) (result i32)
+		(i32.add
+			(get_local $lhs)
+			(get_local $rhs)
+		)
+	)
+	(export "add" (func $add))
+)
+```
+
+???
+
+For those of you who aren't in the know, Assembly is the set of instructions that the CPU in your computer understands. All your CPU can do is fetch and write memory, do some math, and jump between instructions based on conditionals.
+WebAssembly is a similar format, but it doesn't target any specific CPU and is made to be more high level and safe so that it can be used on the web.
+
+---
+
+class: dark-slide
+
+## Cutting edge JavaScript
+
+.center[
+![Some jQuery spaghetti](http://kadamwhite.github.io/talks/2012/backbone-and-underscore/images/jquery-simple.png)
+]
+
+???
+
+As websites were starting to sprinkle JS on their websites this is what the cutting edge of the front end looked like.
+This was great when all people were doing whas showing and hiding some sections or changing highlights after pressing buttons.
+
+---
+
+background-image: url(https://images.sftcdn.net/images/t_optimized,f_auto/p/95b5c72c-9b29-11e6-872b-00163ec9f5fa/3648986392/google-earth-screenshot.jpg)
+background-size: cover
+
+???
+
+But then something happend. People were starting to take JavaScript more seriously, and the web started becoming a platform for more complicated applications like this.
+As peoples ambitions grew, they started to see that a language as high level and dynamic as JavaScript was difficult to optimize and was limiting the sort of things that were possible to do
+
+---
+
+class: center, middle
+
+![ASM.js inside logo](https://acko.net/files/asmjs/asmjsinside.png)
+
+???
+
+Then came some powerful tools which allowed peopel to compile their C++ codebase into highly optimized JavaScript.
+Mozilla pioneered this effort with ASM.js which used a directive to enable advanced optimizations in the JS engine
+
+---
+
+class: wasm-slide
+
+## ASM.js
+
+```javascript
+function DiagModule(stdlib, foreign, heap) {
+*	"use asm";
+
+	// Variable Declarations
+	var sqrt = stdlib.Math.sqrt;
+
+	// Function Declarations
+	function square(x) {
+		x = +x;
+		return +(x*x);
+	}
+
+	function diag(x, y) {
+*		x = +x;
+		y = +y;
+		return +sqrt(square(x) + square(y));
+	}
+
+	return { diag: diag };
+}
+```
+
+???
+
+ASM.js looks like JavaScript if you squint a little, but it's more than that.
+As you can see, at the top of the function we see the "use asm" string which doesn't have any effect in regular JS, but for engines that support it, it enables further optimizations that let a VM turn this function into highly optimized machine code.
+The `+x` you see is used as a type-coersion to tell the VM that this variable will always be a number, it's kinda like static typing in a dynamicly typed language
+
+---
+
+class: center, middle
+
+![Emscripten logo](https://kripken.github.io/emscripten-site/_static/Emscripten_logo_full.png)
+
+???
+
+Emscripten is a tool that lets you compile C++ projects to ASM.js, and provides integrations to let your project interface with browser features like WebGL
+
+---
+
+class: half-images, middle, center
+
+## Projects using Emscripten
+
+[![Tappy Chicken logo](https://cdn1.unrealengine.com/UnrealEngine/3733605/UE_Logo_Black_Centered_Filled.png)
+[![Unity Logo](https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Unity_Technologies_logo.svg/2000px-Unity_Technologies_logo.svg.png)](https://docs.unity3d.com/Manual/webgl-building.html)
+
+---
+
+class: center, gif-slide
+background-image: url(https://media.giphy.com/media/6uMqzcbWRhoT6/giphy.gif)
+background-size: cover
+
+## There's a catch
+
+---
+
+class: wasm-slide, middle, big
+
+- Setting up LLVM and Emscripten
+- Huge compiled files (100MB+)
+- Parsing takes a long time
+- Can only do things that JS can do
+
+</textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js">
+</script>
+<script>
+	var slideshow = remark.create({
+		highlightLines: true
+	});
+</script>
