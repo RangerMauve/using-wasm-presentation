@@ -230,6 +230,249 @@ ASM.js was a great proof of concept, and after validating that a "low level lang
 Smart people got together and started working on a minimal viable product for the WebAssembly spec.
 After toiling away, that spec has been implemented in all major browsers.
 
+---
+
+class: middle
+
+## The binary format
+
+```WebAssembly
+(module
+  (export "square" (func $square))
+  (func $square (param $x i32) (result i32)
+    (return
+      (i32.mul
+        (get_local $x)
+        (get_local $x)
+      )
+    )
+  )
+)
+```
+
+```binary
+00 61 73 6d 01 00 00 00 01 06 01 60 01 7f 01 7f 
+03 02 01 00 07 0a 01 06 73 71 75 61 72 65 00 00 
+0a 0a 01 08 00 20 00 20 00 6c 0f 0b 
+```
+
+???
+
+The top box has what's called WAST which is a textual represantation of WebAssembly instructions.
+The bottom is the actual bytes that this code represents.
+Compliation between these two formats can be done using a tool called WebAssembly Binary Toolkit (WABT).
+Luckily there's a pure JS port that you can install from npm called `wabt.js` so we don't have to bother setting up C++ toolchains.
+
+---
+
+class: middle
+
+## The JS API
+
+```javascript
+async function createModule(source, imports) {
+	var parsed = wabt.parseWast("example.wast", source);
+
+	var binary = parsed.toBinary({
+		write_debug_names: true,
+		log: true
+	}).buffer;
+
+	var module = await WebAssembly.compile(binary);
+	var instance = await WebAssembly.Instance(module, imports || {});
+
+	return instance;
+}
+```
+
+---
+
+class: center, gif-slide
+background-image: url("http://www.reactiongifs.com/r/2013/10/tim-and-eric-mind-blown.gif")
+background-size: cover
+
+## Examples
+
+---
+
+class: middle
+
+## Function delcaration
+```wast
+(func $identity (param i32) (result i32) ...etc)
+```
+
+---
+
+class: middle
+
+## Variables
+
+```wast
+(func (param $bar i32)
+	(local $foo i32)
+	(set_local $foo
+		(get_local $bar)
+	)
+)
+```
+---
+
+class: middle
+
+## Module with exported function
+```wast
+(module
+	(func $add (param $lhs i32) (param $rhs i32) (result i32)
+		(i32.add
+			(get_local $lhs)
+			(get_local $rhs)
+		)
+	)
+	(export "add" (func $add))
+)
+```
+```javascript
+var mymodule = await createModule(sourcecodehere);
+
+// Returns 420
+mymodule.exports.add(400, 20);
+```
+
+---
+
+class: middle
+
+## Using Memory
+
+```wast
+(module
+	(memory (export "mem") 1)
+	(func $save (param $where i32) (param $what i32) (result i32)
+		(i32.store (get_local $where) (get_local $what))
+		(get_local $where)
+	)
+	(func $load (param $where i32) (result i32)
+		(i32.load (get_local $where))
+	)
+	(export "save" (func $save))
+	(export "load" (func $load))
+)
+```
+```javascript
+var mymodule = await createModule(sourcecodehere);
+var mymodule_memory = new Uint32Array(mymodule.mem.buffer)
+simple_memory.save(0, 4);
+simple_memory.load(0); // 4
+simple_memory_heap[0]; // 4
+simple_memory_heap[1] = 420;
+simple_memory.load(4);	// 420	
+```
+
+---
+
+class: middle
+
+## Looping
+
+```wast
+(module
+	(func $factorial (param $n i32) (result i32)
+		(local $result i32)
+		(set_local $result
+			(i32.const 1)
+		)
+		(block
+			(loop
+				(br_if 1 (i32.eqz (get_local $n)))
+				(set_local $result
+					(i32.mul
+						(get_local $n)
+						(get_local $result)
+					)
+				)
+				(set_local $n
+					(i32.sub
+						(get_local $n)
+						(i32.const 1)
+					)
+				)
+				(br 0)
+			)
+		)
+		(get_local $result)
+	)
+	(export "factorial" (func $factorial))
+)
+```
+
+---
+
+class: center, gif-slide
+background-image: url("https://media.giphy.com/media/3o7btPCcdNniyf0ArS/source.gif")
+background-size: cover
+
+## So What?
+
+---
+
+class: center, middle, half-images
+
+![Junk car](http://www.junkcardavie.com/wp-content/uploads/2016/04/ser1.jpg)
+
+???
+
+This is your app when you try to do very heavy computation using vanilla JavaScript without putting in huge amounts of effort into optimization
+
+---
+
+class: center, middle, half-images
+
+![Fancy hummer](https://i.ytimg.com/vi/NPq6dd4JqwI/maxresdefault.jpg)
+
+???
+
+This is that same app but using C++ codebases that have awesome performance
+
+---
+
+class: center, middle, half-images
+
+![Fancy Racing Motorcycle](http://images.mcn.bauercdn.com/PageFiles/603707/1000x750/1-Ducati_996_Troy_Corser.jpg)
+
+???
+
+This is your app using javascript for most of your logic, but dipping into WASM when you need to optimize performance for specific parts of your applications
+
+---
+
+class: center, middle, half-images
+
+![Thinking emoji](https://cdn.shopify.com/s/files/1/1061/1924/files/Thinking_Face_Emoji.png?9898922749706957214)
+
+???
+
+Improvise the conclusion YOLO
+
+---
+
+class: center, middle, wasm-slide
+
+# Thank you!
+
+---
+
+class: middle
+
+## References
+
+- [Platform Support](http://caniuse.com/#feat=wasm)
+- [MDN WAST](https://developer.mozilla.org/en-US/docs/WebAssembly/Understanding_the_text_format)
+- [wabt.js](https://github.com/AssemblyScript/wabt.js)
+- [Overview of syntax](http://webassembly.org/docs/semantics/)
+- [Debug WASM programs](https://mbebenita.github.io/WasmExplorer/)
+- [Assemblyscript playground](https://maxgraey.github.io/Assembleash/#AssemblyScript)
+
 </textarea>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js">
 </script>

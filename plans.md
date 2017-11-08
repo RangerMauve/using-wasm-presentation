@@ -97,7 +97,7 @@
 		(func $identity (param i32) (result i32) ...etc)
 		```
 	- Local variables
-		```
+		```wast
 		(func (param $bar i32)
 			(local $foo i32)
 			(set_local $foo
@@ -147,6 +147,37 @@
 		simple_memory_heap[1] = 420;
 		simple_memory.load(4);	// 420	
 		```
+	- Looping
+	```wast
+	(module
+		(func $factorial (param $n i32) (result i32)
+			(local $result i32)
+			(set_local $result
+				(i32.const 1)
+			)
+			(block
+				(loop
+					(br_if 1 (i32.eqz (get_local $n)))
+					(set_local $result
+						(i32.mul
+							(get_local $n)
+							(get_local $result)
+						)
+					)
+					(set_local $n
+						(i32.sub
+							(get_local $n)
+							(i32.const 1)
+						)
+					)
+					(br 0)
+				)
+			)
+			(get_local $result)
+		)
+		(export "factorial" (func $factorial))
+	)
+	```
 
 
 - References
