@@ -123,6 +123,31 @@
 		// Returns 420
 		mymodule.exports.add(400, 20);
 		```
+	- Using Memory
+		```wast
+		(module
+			(memory (export "mem") 1)
+			(func $save (param $where i32) (param $what i32) (result i32)
+				(i32.store (get_local $where) (get_local $what))
+				(get_local $where)
+			)
+			(func $load (param $where i32) (result i32)
+				(i32.load (get_local $where))
+			)
+			(export "save" (func $save))
+			(export "load" (func $load))
+		)
+		```
+		```javascript
+		var mymodule = await createModule(sourcecodehere);
+		var mymodule_memory = new Uint32Array(mymodule.mem.buffer)
+		simple_memory.save(0, 4);
+		simple_memory.load(0); // 4
+		simple_memory_heap[0]; // 4
+		simple_memory_heap[1] = 420;
+		simple_memory.load(4);	// 420	
+		```
+
 
 - References
 	- Support http://caniuse.com/#feat=wasm

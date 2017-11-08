@@ -52,7 +52,7 @@ async function main(){
 
 	var simple_memory = (await createModule(`
 		(module
-			(memory $0 1)
+			(memory (export "mem") 1)
 			(func $save (param $where i32) (param $what i32) (result i32)
 				(i32.store (get_local $where) (get_local $what))
 				(get_local $where)
@@ -67,6 +67,10 @@ async function main(){
 
 	console.log(`Saving 4, to 0: ${simple_memory.save(0, 4)}`);
 	console.log(`Loading from 0: ${simple_memory.load(0)}`);
+	var simple_memory_heap = new Uint32Array(simple_memory.mem.buffer);
+	console.log(`Loading data directly from heap ${simple_memory_heap[0]}`);
+	console.log(`Loading data from JS into heap: ${simple_memory_heap[0] = 420}`);
+	console.log(`Loading manually set memory ${simple_memory.load(0)}`);
 }
 
 async function createModule(source, imports) {
